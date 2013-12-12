@@ -4,12 +4,14 @@ import com.mongodb.DB
 import com.mongodb.Mongo
 import com.mongodb.gridfs.GridFS
 
+@Grab(group='org.mongodb', module='mongo-java-driver', version='2.11.3')
+
 //db.foo.drop()
 
 def mongo = new Mongo('127.0.0.1')
-def db = mongo.getDB('phxjug')    
-    
-// Collection    
+def db = mongo.getDB('phxjug')
+
+// Collection
 def col = db.getCollection("accounts")
 
 // remove
@@ -35,9 +37,9 @@ println query.size()
 println "Should retrieve brian and bryan: " + query.collect { "${it.firstName} / ${it.lastName}" }
 
 // Do an exists
-query = col.find(['active' : ['$exists' : true]] as BasicDBObject) 
+query = col.find(['active' : ['$exists' : true]] as BasicDBObject)
 println "Should retrieve joseph and bryan: " + query.collect { "${it.firstName} / ${it.lastName}" }
-query = col.find(['active' : ['$exists' : false]] as BasicDBObject) 
+query = col.find(['active' : ['$exists' : false]] as BasicDBObject)
 println "Should retrieve brian: " + query.collect { "${it.firstName} / ${it.lastName}" }
 
 // Do an "in" query
@@ -74,7 +76,7 @@ println "Incremebt 50 + 30 to 80 " + query.collect { it }
 // Lets first apply Encoding to the database
 def index=new BasicDBObject()
 index.put("loc","2d")
-col.ensureIndex(index) 
+col.ensureIndex(index)
 // via db db.accounts.ensureIndex( { loc : "2d" , category : 1 } )
 
 // Now update locations in our database
@@ -83,7 +85,7 @@ col.find([] as BasicDBObject, [address : 1] as BasicDBObject).each {
     col.update(['_id' : it['_id']] as BasicDBObject, ['$set' : ['loc' : ll]] as BasicDBObject, true, true)
 }
 
-    
+
 // 2625 West Baseline Road, Tempe AZ
 http://maps.googleapis.com/maps/api/geocode/json?address=${address.toGoogleMapString()}&sensor=false
 // 1.7 added some more sphereical accuracy
@@ -109,7 +111,7 @@ query['results'].each {
 
 // Now to save the file out - Grid FS
 def gridfs = new GridFS(db)
-def inputFile = gridfs.createFile(new File('/Users/joseph/Projects/Examples/MongoGroovy/in/struts.png'))
+def inputFile = gridfs.createFile(new File('in/struts.png'))
 inputFile.save()
 println "Out > " + inputFile
 
@@ -117,7 +119,7 @@ println "Out > " + inputFile
 def fileOut = gridfs.find(inputFile.getId())
 println "File Out :: $fileOut"
 // write out the file
-fileOut.writeTo(new File("/Users/joseph/Projects/Examples/MongoGroovy/out/${fileOut.getFilename()}"))
+fileOut.writeTo(new File("out/${fileOut.getFilename()}"))
 
 // Also can retrieve and get via input/outputstreams
 
@@ -139,9 +141,10 @@ def mapReduce = col.mapReduce("""
     }
     """,
     "result",
-    [type : 'checking'] as BasicDBObject) 
-println "mapReduce  > $mapReduce "   
-mapReduce.results().each { println it}
+    [type : 'checking'] as BasicDBObject)
+println "mapReduce  > $mapReduce "
+// Can only have one or the other
+//mapReduce.results().each { println it}
 println "mapReduce2 > " + mapReduce.results()[0]['value']['count']
 
 // ************************************************************************************
@@ -165,16 +168,16 @@ def findLatLongLocation(def address) {
       return [latlongs[0]?.lat?.text()?.toDouble(), latlongs[0].lng?.text()?.toDouble()]
       /*
       def location = JSON.parse(url)
-    
+
       // now lets go the GEOTag off of it
       def latlongs = location['results']['geometry']['location']
       if (latlongs) {
         def latlong = latlongs[0]
-        return [latlong['lat'],latlong['lng']]  
+        return [latlong['lat'],latlong['lng']]
       }
       */
   } catch(java.net.UnknownHostException e) {
       log.info("Unknown host : ${e.getMessage()}")
-    }      
+    }
     []
 }
